@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY handler.py .
 
 # Set environment variables (can be overridden at runtime)
-ENV MODEL_NAME=llama-3-8b
+ENV MODEL_NAME=meta-llama/Meta-Llama-3-8B
 ENV MODEL_REVISION=v1
 ENV MODEL_BASE_URL=https://api.openai.com/v1
 

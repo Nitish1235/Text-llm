@@ -33,16 +33,21 @@ Production deployment guide for Runpod and Modal serverless platforms using Goog
   - Account at [modal.com](https://modal.com)
   - Modal CLI installed: `pip install modal`
 
+- **Hugging Face**
+  - Account at [huggingface.co](https://huggingface.co)
+  - Access token with read permissions
+  - Access to `meta-llama/Meta-Llama-3-8B` model (request access if needed)
+
 ### Required Secrets
 
 Before deployment, prepare these values:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `MODEL_API_KEY` | Your LLM provider API key | `sk-...` |
-| `MODEL_BASE_URL` | OpenAI-compatible API endpoint | `https://api.openai.com/v1` |
-| `MODEL_NAME` | Default model identifier | `llama-3-8b` |
-| `MODEL_REVISION` | Model version tag | `v1` |
+| `MODEL_API_KEY` | Hugging Face access token | `hf_...` |
+| `MODEL_BASE_URL` | OpenAI-compatible API endpoint (see Hugging Face setup below) | `https://api.together.xyz/v1` or Inference Endpoint URL |
+| `MODEL_NAME` | Hugging Face model identifier | `meta-llama/Meta-Llama-3-8B` |
+| `MODEL_REVISION` | Model version tag | `v1` or commit hash |
 | `API_KEY` | Your service authentication key (generate a random string) | `your-random-secret-key-here` |
 
 **Generate API_KEY:**
@@ -55,17 +60,76 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ## Environment Variables Setup
 
+### Hugging Face Setup
+
+#### Option 1: Using Hugging Face Inference Endpoints (Recommended)
+
+1. **Create Inference Endpoint**:
+   - Go to [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
+   - Create new endpoint
+   - Select model: `meta-llama/Meta-Llama-3-8B`
+   - Choose instance type (GPU recommended)
+   - Enable **OpenAI-compatible API** option
+   - Deploy endpoint
+
+2. **Get Endpoint URL**:
+   - Copy the endpoint URL (e.g., `https://xxx.us-east-1.aws.endpoints.huggingface.cloud`)
+   - This becomes your `MODEL_BASE_URL`
+
+3. **Get API Key**:
+   - Use your Hugging Face access token as `MODEL_API_KEY`
+   - Create token at: [Hugging Face Settings → Access Tokens](https://huggingface.co/settings/tokens)
+
+#### Option 2: Using Third-Party OpenAI-Compatible Services
+
+Services like **Together AI**, **Anyscale**, or **Replicate** provide OpenAI-compatible APIs for Hugging Face models:
+
+**Together AI Example:**
+```bash
+MODEL_BASE_URL=https://api.together.xyz/v1
+MODEL_NAME=meta-llama/Llama-3-8b-chat-hf
+MODEL_API_KEY=your-together-ai-api-key
+```
+
+**Anyscale Example:**
+```bash
+MODEL_BASE_URL=https://api.endpoints.anyscale.com/v1
+MODEL_NAME=meta-llama/Meta-Llama-3-8B-Instruct
+MODEL_API_KEY=your-anyscale-api-key
+```
+
+#### Option 3: Self-Hosted TGI (Text Generation Inference)
+
+If you're running TGI yourself:
+```bash
+MODEL_BASE_URL=https://your-tgi-endpoint.com/v1
+MODEL_NAME=meta-llama/Meta-Llama-3-8B
+MODEL_API_KEY=your-api-key
+```
+
 ### Required Environment Variables
 
 Both Runpod and Modal need these environment variables:
 
+**For Hugging Face Inference Endpoints:**
 ```bash
-MODEL_API_KEY=your-llm-provider-api-key
-MODEL_BASE_URL=https://api.openai.com/v1
-MODEL_NAME=llama-3-8b
+MODEL_API_KEY=hf_your_huggingface_token
+MODEL_BASE_URL=https://xxx.us-east-1.aws.endpoints.huggingface.cloud
+MODEL_NAME=meta-llama/Meta-Llama-3-8B
 MODEL_REVISION=v1
 API_KEY=your-service-api-key
 ```
+
+**For Together AI (example):**
+```bash
+MODEL_API_KEY=your-together-ai-api-key
+MODEL_BASE_URL=https://api.together.xyz/v1
+MODEL_NAME=meta-llama/Llama-3-8b-chat-hf
+MODEL_REVISION=v1
+API_KEY=your-service-api-key
+```
+
+**Note:** Replace with your actual Hugging Face model identifier and endpoint URL.
 
 ---
 
@@ -188,12 +252,13 @@ gcloud artifacts docker images list us-central1-docker.pkg.dev/$PROJECT_ID/$REPO
 4. **Set Environment Variables**
    In the endpoint configuration, add these environment variables:
    ```
-   MODEL_API_KEY=your-llm-provider-api-key
-   MODEL_BASE_URL=https://api.openai.com/v1
-   MODEL_NAME=llama-3-8b
+   MODEL_API_KEY=hf_your_huggingface_token
+   MODEL_BASE_URL=https://xxx.us-east-1.aws.endpoints.huggingface.cloud
+   MODEL_NAME=meta-llama/Meta-Llama-3-8B
    MODEL_REVISION=v1
    API_KEY=your-service-api-key
    ```
+   **Note:** Replace with your actual Hugging Face endpoint URL and model identifier.
 
 5. **Configure Resources**
    - **CPU**: 1-2 vCPU (recommended: 2)
@@ -245,24 +310,26 @@ modal app list
 3. Name: `text-llm-secrets`
 4. Add these key-value pairs:
    ```
-   MODEL_API_KEY=your-llm-provider-api-key
-   MODEL_BASE_URL=https://api.openai.com/v1
-   MODEL_NAME=llama-3-8b
+   MODEL_API_KEY=hf_your_huggingface_token
+   MODEL_BASE_URL=https://xxx.us-east-1.aws.endpoints.huggingface.cloud
+   MODEL_NAME=meta-llama/Meta-Llama-3-8B
    MODEL_REVISION=v1
    API_KEY=your-service-api-key
    ```
+   **Note:** Replace with your actual Hugging Face endpoint URL and model identifier.
 5. Click **"Create"**
 
 **Option B: Using Modal CLI**
 
 ```bash
 modal secret create text-llm-secrets \
-  MODEL_API_KEY=your-llm-provider-api-key \
-  MODEL_BASE_URL=https://api.openai.com/v1 \
-  MODEL_NAME=llama-3-8b \
+  MODEL_API_KEY=hf_your_huggingface_token \
+  MODEL_BASE_URL=https://xxx.us-east-1.aws.endpoints.huggingface.cloud \
+  MODEL_NAME=meta-llama/Meta-Llama-3-8B \
   MODEL_REVISION=v1 \
   API_KEY=your-service-api-key
 ```
+**Note:** Replace with your actual Hugging Face endpoint URL and model identifier.
 
 ### Step 4: Deploy Modal App
 
@@ -463,10 +530,17 @@ modal secret create text-llm-secrets MODEL_API_KEY=... MODEL_BASE_URL=...
 **Error:** `{"error": "Model error: ...", "code": "MODEL_ERROR"}`
 
 **Solution:**
-- Verify `MODEL_API_KEY` is correct
-- Check `MODEL_BASE_URL` is accessible
-- Ensure model name exists at the provider
-- Check provider rate limits
+- Verify `MODEL_API_KEY` is correct (Hugging Face token starts with `hf_`)
+- Check `MODEL_BASE_URL` is accessible and correct
+- Ensure model name is correct (e.g., `meta-llama/Meta-Llama-3-8B`)
+- Verify you have access to the model on Hugging Face
+- Check Hugging Face rate limits and quota
+- For Inference Endpoints: Ensure endpoint is running and not paused
+- Test endpoint directly with curl:
+  ```bash
+  curl https://your-endpoint-url/v1/models \
+    -H "Authorization: Bearer hf_your_token"
+  ```
 
 #### 6. Token Limit Exceeded
 
@@ -572,7 +646,10 @@ modal deploy modal_app.py::generate
 - **Runpod Docs**: https://docs.runpod.io
 - **Modal Docs**: https://modal.com/docs
 - **GCP Artifact Registry**: https://cloud.google.com/artifact-registry/docs
-- **OpenAI API Docs**: https://platform.openai.com/docs
+- **Hugging Face Inference Endpoints**: https://huggingface.co/docs/inference-endpoints
+- **Hugging Face Model**: https://huggingface.co/meta-llama/Meta-Llama-3-8B
+- **Together AI (Alternative)**: https://www.together.ai
+- **Anyscale (Alternative)**: https://www.anyscale.com
 
 ---
 
@@ -588,10 +665,10 @@ us-central1-docker.pkg.dev/my-project/llm-text-repo/llm-text:latest
 ```
 
 ### Environment Variables Checklist
-- [ ] `MODEL_API_KEY` - LLM provider API key
-- [ ] `MODEL_BASE_URL` - API endpoint URL
-- [ ] `MODEL_NAME` - Default model name
-- [ ] `MODEL_REVISION` - Model version
+- [ ] `MODEL_API_KEY` - Hugging Face access token (hf_...)
+- [ ] `MODEL_BASE_URL` - Hugging Face Inference Endpoint URL or OpenAI-compatible API URL
+- [ ] `MODEL_NAME` - Hugging Face model identifier (e.g., meta-llama/Meta-Llama-3-8B)
+- [ ] `MODEL_REVISION` - Model version or commit hash
 - [ ] `API_KEY` - Service authentication key
 
 ### Endpoint URLs
